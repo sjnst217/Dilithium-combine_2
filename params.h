@@ -4,13 +4,13 @@
 
 #define SEEDBYTES 32            // 256bit 짜리 random 값을 구할 때 이용 & A, s1, s2, DILITHIUM_K 의 seed를 생성하는 seed, 
 #define CRHBYTES 64             // 512bit 짜리 random 값을 구할 때 이용 (s1, s2를 생성하는 seed를 위함)
-#define DILITHIUM_N 256                   // 다항식의 최대 차수
+#define DILITHIUM_N 256         // 다항식의 최대 차수
 #define Q 8380417               // modulo Q
 #define D 13                    // t = t1*2^D+t0 를 구할 때 사용하는 즉, t의 high bit를 구하기 위한 값
 #define ROOT_OF_UNITY 1753      // NTT에서 이용하는 Dilithium의 root of unity
 
-#define DILITHIUM_K 4                     // 공개행렬 A에서 행의 크기
-#define DILITHIUM_L 4                     // 공개행렬 A에서 열의 크기
+#define DILITHIUM_K 4           // 공개행렬 A에서 행의 크기
+#define DILITHIUM_L 4           // 공개행렬 A에서 열의 크기
 #define ETA 2                   // s1, s2의 범위
 #define TAU 39                  // c 벡터에서 계수의 크기가 +1, -1인 계수의 개수
 #define BETA 78                 // eta * tau
@@ -40,9 +40,10 @@ z
 각 계수들은 Dilithium의 보안레벨에 따라 달라지기 때문에 packing 할 때의 크기 역시 보안 레벨에 따라 달라지게 됨
 */
 
-#define POLY_UNIFORM_NBLOCKS ((768 + STREAM128_BLOCKBYTES - 1)/STREAM128_BLOCKBYTES)
-#define POLY_UNIFORM_ETA_NBLOCKS ((136 + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)
-#define POLY_UNIFORM_GAMMA1_NBLOCKS ((POLYZ_PACKEDBYTES + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)
+
+#define POLY_UNIFORM_NBLOCKS ((768 + STREAM128_BLOCKBYTES - 1)/STREAM128_BLOCKBYTES)                            // Dilithium의 계수는 23bit 표현이기 때문에, (256 * 24 / 8 +  168 - 1) / 168 = 5
+#define POLY_UNIFORM_ETA_NBLOCKS ((136 + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)                        // eta의 범위는 -2 ~ 2이기 때문에, 하나의 계수를 4bit 표현으로 나타낼 수 있는데, 256 * 4/8 = 128byte이다, 이는  shake함수의 하나의 block 크기도 되지 않기 때문에, 128 대신 136으로 사용
+#define POLY_UNIFORM_GAMMA1_NBLOCKS ((POLYZ_PACKEDBYTES + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)       
 
 
  
