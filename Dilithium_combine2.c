@@ -1763,7 +1763,7 @@ int PQCLEAN_DILITHIUM2_CLEAN_polyvecl_chknorm(const polyvecl *v, int32_t bound) 
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_uniform_eta(polyveck *v, const uint8_t seed[CRHBYTES], uint16_t nonce) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_uniform_eta(&v->vec[i], seed, nonce++);
     }
 }
@@ -1771,7 +1771,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_uniform_eta(polyveck *v, const uint8_t se
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_reduce(polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_reduce(&v->vec[i]);
     }
 }
@@ -1779,7 +1779,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_reduce(polyveck *v) {
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_caddq(polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_caddq(&v->vec[i]);
     }
 }
@@ -1787,7 +1787,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_caddq(polyveck *v) {
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_add(polyveck *w, const polyveck *u, const polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_add(&w->vec[i], &u->vec[i], &v->vec[i]);
     }
 }
@@ -1795,7 +1795,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_add(polyveck *w, const polyveck *u, const
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_sub(polyveck *w, const polyveck *u, const polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_sub(&w->vec[i], &u->vec[i], &v->vec[i]);
     }
 }
@@ -1803,7 +1803,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_sub(polyveck *w, const polyveck *u, const
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_shiftl(polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_shiftl(&v->vec[i]);
     }
 }
@@ -1811,7 +1811,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_shiftl(polyveck *v) {
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_ntt(polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_ntt(&v->vec[i]);
     }
 }
@@ -1819,7 +1819,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_ntt(polyveck *v) {
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_invntt_tomont(polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_invntt_tomont(&v->vec[i]);
     }
 }
@@ -1827,7 +1827,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_invntt_tomont(polyveck *v) {
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_pointwise_poly_montgomery(polyveck *r, const poly *a, const polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_pointwise_montgomery(&r->vec[i], a, &v->vec[i]);
     }
 }
@@ -1835,7 +1835,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_pointwise_poly_montgomery(polyveck *r, co
 int PQCLEAN_DILITHIUM2_CLEAN_polyveck_chknorm(const polyveck *v, int32_t bound) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         if (PQCLEAN_DILITHIUM2_CLEAN_poly_chknorm(&v->vec[i], bound)) {
             return 1;
         }
@@ -1847,7 +1847,7 @@ int PQCLEAN_DILITHIUM2_CLEAN_polyveck_chknorm(const polyveck *v, int32_t bound) 
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_power2round(&v1->vec[i], &v0->vec[i], &v->vec[i]);
     }
 }
@@ -1855,7 +1855,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_power2round(polyveck *v1, polyveck *v0, c
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_decompose(polyveck *v1, polyveck *v0, const polyveck *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_decompose(&v1->vec[i], &v0->vec[i], &v->vec[i]);
     }
 }
@@ -1863,7 +1863,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_decompose(polyveck *v1, polyveck *v0, con
 unsigned int PQCLEAN_DILITHIUM2_CLEAN_polyveck_make_hint(polyveck *h, const polyveck *v0, const polyveck *v1) {
     unsigned int i, s = 0;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         s += PQCLEAN_DILITHIUM2_CLEAN_poly_make_hint(&h->vec[i], &v0->vec[i], &v1->vec[i]);
     }
 
@@ -1873,33 +1873,33 @@ unsigned int PQCLEAN_DILITHIUM2_CLEAN_polyveck_make_hint(polyveck *h, const poly
 void PQCLEAN_DILITHIUM2_CLEAN_polyveck_use_hint(polyveck *w, const polyveck *u, const polyveck *h) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_poly_use_hint(&w->vec[i], &u->vec[i], &h->vec[i]);
     }
 }
 
-void PQCLEAN_DILITHIUM2_CLEAN_polyveck_pack_w1(uint8_t r[K * POLYW1_PACKEDBYTES], const polyveck *w1) {
+void PQCLEAN_DILITHIUM2_CLEAN_polyveck_pack_w1(uint8_t r[DILITHIUM_K * POLYW1_PACKEDBYTES], const polyveck *w1) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_polyw1_pack(&r[i * POLYW1_PACKEDBYTES], &w1->vec[i]);
     }
 }
 
-void PQCLEAN_DILITHIUM2_CLEAN_polyvec_matrix_expand(polyvecl mat[K], const uint8_t rho[SEEDBYTES]) {
+void PQCLEAN_DILITHIUM2_CLEAN_polyvec_matrix_expand(polyvecl mat[DILITHIUM_K], const uint8_t rho[SEEDBYTES]) {
     unsigned int i, j;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         for (j = 0; j < DILITHIUM_L; ++j) {
             PQCLEAN_DILITHIUM2_CLEAN_poly_uniform(&mat[i].vec[j], rho, (uint16_t) ((i << 8) + j));
         }
     }
 }
 
-void PQCLEAN_DILITHIUM2_CLEAN_polyvec_matrix_pointwise_montgomery(polyveck *t, const polyvecl mat[K], const polyvecl *v) {
+void PQCLEAN_DILITHIUM2_CLEAN_polyvec_matrix_pointwise_montgomery(polyveck *t, const polyvecl mat[DILITHIUM_K], const polyvecl *v) {
     unsigned int i;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_polyvecl_pointwise_acc_montgomery(&t->vec[i], &mat[i], v);
     }
 }
@@ -1914,7 +1914,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_pack_pk(uint8_t pk[PQCLEAN_DILITHIUM2_CLEAN_CRYPTO
     }
     pk += SEEDBYTES;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_polyt1_pack(pk + i * POLYT1_PACKEDBYTES, &t1->vec[i]);
     }
 }
@@ -1927,7 +1927,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_unpack_pk(uint8_t rho[SEEDBYTES], polyveck *t1, co
     }
     pk += SEEDBYTES;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_polyt1_unpack(&t1->vec[i], pk + i * POLYT1_PACKEDBYTES);
     }
 }
@@ -1955,12 +1955,12 @@ void PQCLEAN_DILITHIUM2_CLEAN_pack_sk(uint8_t sk[PQCLEAN_DILITHIUM2_CLEAN_CRYPTO
     }
     sk += DILITHIUM_L * POLYETA_PACKEDBYTES;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_polyeta_pack(sk + i * POLYETA_PACKEDBYTES, &s2->vec[i]);
     }
-    sk += K * POLYETA_PACKEDBYTES;
+    sk += DILITHIUM_K * POLYETA_PACKEDBYTES;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_polyt0_pack(sk + i * POLYT0_PACKEDBYTES, &t0->vec[i]);
     }
 }
@@ -1988,12 +1988,12 @@ void PQCLEAN_DILITHIUM2_CLEAN_unpack_sk(uint8_t rho[SEEDBYTES], uint8_t tr[SEEDB
     }
     sk += DILITHIUM_L * POLYETA_PACKEDBYTES;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_polyeta_unpack(&s2->vec[i], sk + i * POLYETA_PACKEDBYTES);
     }
-    sk += K * POLYETA_PACKEDBYTES;
+    sk += DILITHIUM_K * POLYETA_PACKEDBYTES;
 
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         PQCLEAN_DILITHIUM2_CLEAN_polyt0_unpack(&t0->vec[i], sk + i * POLYT0_PACKEDBYTES);
     }
 }
@@ -2012,12 +2012,12 @@ void PQCLEAN_DILITHIUM2_CLEAN_pack_sig(uint8_t sig[PQCLEAN_DILITHIUM2_CLEAN_CRYP
     sig += DILITHIUM_L * POLYZ_PACKEDBYTES;
 
     /* Encode h */
-    for (i = 0; i < OMEGA + K; ++i) {
+    for (i = 0; i < OMEGA + DILITHIUM_K; ++i) {
         sig[i] = 0;
     }
 
     k = 0;
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         for (j = 0; j < DILITHIUM_N; ++j) {
             if (h->vec[i].coeffs[j] != 0) {
                 sig[k++] = (uint8_t) j;     // 1인 항의 위치를 저장하고
@@ -2043,7 +2043,7 @@ int PQCLEAN_DILITHIUM2_CLEAN_unpack_sig(uint8_t c[SEEDBYTES], polyvecl *z, polyv
 
     /* Decode h */
     k = 0;
-    for (i = 0; i < K; ++i) {
+    for (i = 0; i < DILITHIUM_K; ++i) {
         for (j = 0; j < DILITHIUM_N; ++j) {
             h->vec[i].coeffs[j] = 0;
         }
@@ -2081,7 +2081,7 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
     uint8_t seedbuf[2 * SEEDBYTES + CRHBYTES];
     uint8_t tr[SEEDBYTES];
     const uint8_t *rho, *rhoprime, *key;
-    polyvecl mat[K];
+    polyvecl mat[DILITHIUM_K];
     polyvecl s1, s1hat;
     polyveck s2, t1, t0;
 
@@ -2126,7 +2126,7 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_signature(uint8_t *sig, size_t *siglen,
     uint8_t seedbuf[3 * SEEDBYTES + 2 * CRHBYTES];
     uint8_t *rho, *tr, *key, *mu, *rhoprime;
     uint16_t nonce = 0;
-    polyvecl mat[K], s1, y, z;
+    polyvecl mat[DILITHIUM_K], s1, y, z;
     polyveck t0, s2, w1, w0, h;
     poly cp;
     shake256incctx state;
@@ -2172,7 +2172,7 @@ rej:
 
     shake256_inc_init(&state);
     shake256_inc_absorb(&state, mu, CRHBYTES);
-    shake256_inc_absorb(&state, sig, K * POLYW1_PACKEDBYTES);
+    shake256_inc_absorb(&state, sig, DILITHIUM_K * POLYW1_PACKEDBYTES);
     shake256_inc_finalize(&state);
     shake256_inc_squeeze(sig, SEEDBYTES, &state);
     shake256_inc_ctx_release(&state);
@@ -2232,13 +2232,13 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign(uint8_t *sm, size_t *smlen, const uint8
 
 int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m, size_t mlen, const uint8_t *pk) {
     unsigned int i;
-    uint8_t buf[K * POLYW1_PACKEDBYTES];
+    uint8_t buf[DILITHIUM_K * POLYW1_PACKEDBYTES];
     uint8_t rho[SEEDBYTES];
     uint8_t mu[CRHBYTES];
     uint8_t c[SEEDBYTES];
     uint8_t c2[SEEDBYTES];
     poly cp;
-    polyvecl mat[K], z;
+    polyvecl mat[DILITHIUM_K], z;
     polyveck t1, w1, h;
     shake256incctx state;
 
@@ -2287,7 +2287,7 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t sigle
     /* Call random oracle and verify PQCLEAN_DILITHIUM2_CLEAN_challenge */
     shake256_inc_init(&state);
     shake256_inc_absorb(&state, mu, CRHBYTES);
-    shake256_inc_absorb(&state, buf, K * POLYW1_PACKEDBYTES);
+    shake256_inc_absorb(&state, buf, DILITHIUM_K * POLYW1_PACKEDBYTES);
     shake256_inc_finalize(&state);
     shake256_inc_squeeze(c2, SEEDBYTES, &state);
     shake256_inc_ctx_release(&state);
@@ -2397,7 +2397,7 @@ int main()
         fprintf(stderr, "Trivial forgeries possible\n");
         return -1;
     }
-
+    
     printf("CRYPTO_PUBLICKEYBYTES = %d\n", PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_PUBLICKEYBYTES);
     printf("CRYPTO_SECRETKEYBYTES = %d\n", PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_SECRETKEYBYTES);
     printf("CRYPTO_BYTES = %d\n", PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES);

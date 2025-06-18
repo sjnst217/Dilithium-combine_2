@@ -2,14 +2,14 @@
 #define PQCLEAN_DILITHIUM2_CLEAN_PARAMS_H
 
 
-#define SEEDBYTES 32            // 256bit 짜리 random 값을 구할 때 이용 & A, s1, s2, K 의 seed를 생성하는 seed, 
+#define SEEDBYTES 32            // 256bit 짜리 random 값을 구할 때 이용 & A, s1, s2, DILITHIUM_K 의 seed를 생성하는 seed, 
 #define CRHBYTES 64             // 512bit 짜리 random 값을 구할 때 이용 (s1, s2를 생성하는 seed를 위함)
 #define DILITHIUM_N 256                   // 다항식의 최대 차수
 #define Q 8380417               // modulo Q
 #define D 13                    // t = t1*2^D+t0 를 구할 때 사용하는 즉, t의 high bit를 구하기 위한 값
 #define ROOT_OF_UNITY 1753      // NTT에서 이용하는 Dilithium의 root of unity
 
-#define K 4                     // 공개행렬 A에서 행의 크기
+#define DILITHIUM_K 4                     // 공개행렬 A에서 행의 크기
 #define DILITHIUM_L 4                     // 공개행렬 A에서 열의 크기
 #define ETA 2                   // s1, s2의 범위
 #define TAU 39                  // c 벡터에서 계수의 크기가 +1, -1인 계수의 개수
@@ -55,7 +55,7 @@ z
 
 #define POLYETA_PACKEDBYTES  96                 // s1, s2       3bit 표현의 계수 256개로 이루어져 있음. 256 * 3/8 byte 
 
-#define POLYVECH_PACKEDBYTES (OMEGA + K)        // h            hint vector h는 계수가 1 또는 0이기 때문에 일반적인 encoding과 다를 수 있음. 
+#define POLYVECH_PACKEDBYTES (OMEGA + DILITHIUM_K)        // h            hint vector h는 계수가 1 또는 0이기 때문에 일반적인 encoding과 다를 수 있음. 
                                                 //              앞의 omega byte는 1인 항의 위치, 마지막 k byte는 각 다항식에서 1인 항이 몇개인지를 담아서 표현
 
 
@@ -63,13 +63,13 @@ z
 
 
 // packing했을 때의 public key의 크기   (A행렬 seed, t1)
-#define PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_PUBLICKEYBYTES (SEEDBYTES + K*POLYT1_PACKEDBYTES)
+#define PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_PUBLICKEYBYTES (SEEDBYTES + DILITHIUM_K*POLYT1_PACKEDBYTES)
 
 // packing했을 때의 secret key의 크기   (A행렬 seed, y행렬 seed, message 해시값 seed + s1 + s2 + t0) 
 #define PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_SECRETKEYBYTES (3*SEEDBYTES \
         + DILITHIUM_L*POLYETA_PACKEDBYTES \
-        + K*POLYETA_PACKEDBYTES \
-        + K*POLYT0_PACKEDBYTES)
+        + DILITHIUM_K*POLYETA_PACKEDBYTES \
+        + DILITHIUM_K*POLYT0_PACKEDBYTES)
 
 
 
@@ -85,7 +85,7 @@ typedef struct {
         } polyvecl;
 
 typedef struct {
-        poly vec[K];
+        poly vec[DILITHIUM_K];
 } polyveck;  
 
 
