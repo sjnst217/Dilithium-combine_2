@@ -3,7 +3,7 @@
 
 
 #define SEEDBYTES 32            // 256bit 짜리 random 값을 구할 때 이용 & A, s1, s2, DILITHIUM_K 의 seed를 생성하는 seed, 
-#define CRHBYTES 64             // 512bit 짜리 random 값을 구할 때 이용 (s1, s2를 생성하는 seed를 위함)
+#define CRHBYTES 64             // 512bit 짜리 random 값을 구할 때 이용 (mu, y행렬 seed 값, s1, s2)
 #define DILITHIUM_N 256         // 다항식의 최대 차수
 #define Q 8380417               // modulo Q
 #define D 13                    // t = t1*2^D+t0 를 구할 때 사용하는 즉, t의 high bit를 구하기 위한 값
@@ -43,7 +43,7 @@ z
 
 #define POLY_UNIFORM_NBLOCKS ((768 + STREAM128_BLOCKBYTES - 1)/STREAM128_BLOCKBYTES)                            // Dilithium의 계수는 23bit 표현이기 때문에, (256 * 24 / 8 +  168 - 1) / 168 = 5
 #define POLY_UNIFORM_ETA_NBLOCKS ((136 + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)                        // eta의 범위는 -2 ~ 2이기 때문에, 하나의 계수를 4bit 표현으로 나타낼 수 있는데, 256 * 4/8 = 128byte이다, 이는  shake함수의 하나의 block 크기도 되지 않기 때문에, 128 대신 136으로 사용
-#define POLY_UNIFORM_GAMMA1_NBLOCKS ((POLYZ_PACKEDBYTES + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)       
+#define POLY_UNIFORM_GAMMA1_NBLOCKS ((POLYZ_PACKEDBYTES + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)       // Gamma1의 범위는 ( -2^17, 2^17] 으로 하나의 계수를 18bit 표현으로 나타낼 수 있음 256 * 18/8 = 576byte -> (576 + 136 - 1) / 136 = 5
 
 
  
