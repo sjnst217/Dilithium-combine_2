@@ -1138,17 +1138,20 @@ int32_t PQCLEAN_DILITHIUM2_CLEAN_power2round(int32_t *a0, int32_t a)
     return a1;
 }
 
-int32_t PQCLEAN_DILITHIUM2_CLEAN_decompose(int32_t *a0, int32_t a)
+int32_t PQCLEAN_DILITHIUM2_CLEAN_decompose(int32_t *a0, int32_t a)  // w0, w
 {
     int32_t a1;
+    //printf("test\n");
+    a1 = (a + 127) >> 7;                        // a1 = (w + 127) >> 7                          w는 23bit 표현으로 그러한 w를 128로 나누었을때의 몫의 올림값을 a1이라고 한다.       
+                                                //                                              0 : 0 , 1 ~ 128 : 1 * 11275, 129 ~ 256 : 2 * 11275 ... , 5377 ~ 5504 : 43 * 11275, ... , 8380289 ~ 8380416 : 65472 * 11275 
+                                                //                                              [      ,     0, 744  ] : 0, [   745,  1488, 2232 ] : 1, ... , [ 63241, 63984, 64728] : 43, [ 64729, 65472,		 ] : 44         -> 여기에 있는 숫자는 모두 >> 7을 한 숫자를 기준으로 함
+    a1 = (a1 * 11275 + (1 << 23)) >> 24;        // a1 = (a1 * 11275 + (1 << 23)) >> 24          그러한 a1을 a1 * 11275 + (1 << 23) >> 24 하는 것으로 설명과 문서와 같은 방식으로 작동하게 됨
+                                                //                                              이러한 방식은 Q가 2^24에 가깝고, 그렇다면 w0 는 2^23과 비슷하기 때문에 위와 같이 계산을 하도록 할 수 있음
+    a1 ^= ((43 - a1) >> 31) & a1;               // a1 = a1 ^ ((43 - a1) >> 31) & a1             이 때 a1의 값이 44일 경우 0으로 변경 해 주는것으로 high bit의 carry가 진행되지 않도록 해 준다.
 
-    a1 = (a + 127) >> 7;
-    a1 = (a1 * 11275 + (1 << 23)) >> 24;
-    a1 ^= ((43 - a1) >> 31) & a1;
-
-    *a0 = a - a1 * 2 * GAMMA2;
-    *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q;
-    return a1;
+    *a0 = a - a1 * 2 * GAMMA2;                  // a0 = w - a1 * 2 * GAMMA2                     여기에서 w0를 구하기 위해서 w - w1 * 2 * GAMMA2를 진행해주고
+    //*a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q;     // a0 = a0 - (((Q - 1) / 2 - a0) >> 31) & Q     
+    return a1;                                  // 
 }
 
 unsigned int PQCLEAN_DILITHIUM2_CLEAN_make_hint(int32_t a0, int32_t a1)
@@ -1633,14 +1636,14 @@ void PQCLEAN_DILITHIUM2_CLEAN_poly_power2round(poly *a1, poly *a0, const poly *a
     DBENCH_STOP(*tround);
 }
 
-void PQCLEAN_DILITHIUM2_CLEAN_poly_decompose(poly *a1, poly *a0, const poly *a)
+void PQCLEAN_DILITHIUM2_CLEAN_poly_decompose(poly *a1, poly *a0, const poly *a) // w1, w0, w
 {
     unsigned int i;
     DBENCH_START();
 
     for (i = 0; i < DILITHIUM_N; ++i)
     {
-        a1->coeffs[i] = PQCLEAN_DILITHIUM2_CLEAN_decompose(&a0->coeffs[i], a->coeffs[i]);
+        a1->coeffs[i] = PQCLEAN_DILITHIUM2_CLEAN_decompose(&a0->coeffs[i], a->coeffs[i]);   // w1 = decompose(w0, w)
     }
 
     DBENCH_STOP(*tround);
@@ -1674,15 +1677,17 @@ void PQCLEAN_DILITHIUM2_CLEAN_poly_use_hint(poly *b, const poly *a, const poly *
     DBENCH_STOP(*tround);
 }
 
-int PQCLEAN_DILITHIUM2_CLEAN_poly_chknorm(const poly *a, int32_t B)
+// c * s1 + y 의 계수중 GAMMA1 - BETA 보다 큰 값이 있다면 rej로 가도록 하는 함수
+// w0 - c * s2의 계수중 GAMMA2 - BETA 보다 큰 값이 있다면 rej로 가도록 하는 함수
+int PQCLEAN_DILITHIUM2_CLEAN_poly_chknorm(const poly *a, int32_t B) // z= c*s1+y, GAMMA1 - BETA or GAMMA2 - BETA     BETA = eta * tau 
 {
     unsigned int i;
     int32_t t;
     DBENCH_START();
 
-    if (B > (Q - 1) / 8)
-    {
-        return 1;
+    if (B > (Q - 1) / 8)    // GAMMA1 - BETA > (Q - 1) / 8 -> GAMMA1의 최대 계수 : 2^17(131,072), BETA의 최대 계수 : 78 GAMMA2의 최대 계수 : Q-1/88(95,232)
+    {                       // Q : 8380417, Q - 1 / 8 -> 1,047,552
+        return 1;           // 즉, 어딘가에서 오류가 나서 GAMMA1 - BETA or GAMMA2 - BETA 의 크기가 이상하면 reject
     }
 
     /* It is ok to leak which coefficient violates the bound since
@@ -1691,13 +1696,13 @@ int PQCLEAN_DILITHIUM2_CLEAN_poly_chknorm(const poly *a, int32_t B)
     for (i = 0; i < DILITHIUM_N; ++i)
     {
         /* Absolute value */
-        t = a->coeffs[i] >> 31;
-        t = a->coeffs[i] - (t & 2 * a->coeffs[i]);
+        t = a->coeffs[i] >> 31;                     // a의 계수는 음수일 수 있기 때문에, t에 현재 계수가 음수인지 아닌지 확인해주고 음수라면 t = 0x1111...1111로 1로 가득 찬 bit가 될 것이고, 아니라면 0으로 가득 찬 bit가 된다.
+        t = a->coeffs[i] - (t & 2 * a->coeffs[i]);  // a의 계수가 양수였다면 그대로, 음수였다면 양수로 변경해주는 코드 (즉, 계수의 절대값을 구해줌)
 
-        if (t >= B)
+        if (t >= B)                                 // 그 계수의 절대값이 bound(GAMMA1 - BETA or GAMMA2 - BETA) 보다 크거나 같다면
         {
             DBENCH_STOP(*tsample);
-            return 1;
+            return 1;                               // reject
         }
     }
 
@@ -1849,9 +1854,9 @@ void PQCLEAN_DILITHIUM2_CLEAN_poly_challenge(poly *c, const uint8_t seed[SEEDBYT
             }
 
             b = buf[pos++];                             // b에 buf값 (shake256의 결과값)을 하나씩 가져오게
-        } while (b > i);                                // b의 값이 i값보다 클 때까지 계속해서 실행함
+        } while (b > i);                                // b의 값이 i값보다 작을 때까지 계속해서 실행함 (i값보다 크다면 재실행)
 
-        c->coeffs[i] = c->coeffs[b];                    // c의 coef[i]의 값을 c의 coef[b]로 변경
+        c->coeffs[i] = c->coeffs[b];                    // c의 coef[i]의 값을 c의 coef[b]로 변경                        (즉, 현재 변경하고자 하는 coef[b]값에 어떠한 값이 이미 있다면 현재의 i값으로 그 값을 옮겨주는 행위인 것)
         c->coeffs[b] = 1 - 2 * (signs & 1);             // c의 coef[b]는 signs의 하위 1bit가 1 -> -1, 0 -> 1 로 변경    
         signs >>= 1;                                    // signs >> 1로 signs의 마지막 bit를 그 앞의 bit로 변경해줌
     }
@@ -1946,8 +1951,8 @@ int PQCLEAN_DILITHIUM2_CLEAN_polyvecl_chknorm(const polyvecl *v, int32_t bound)
     unsigned int i;
 
     for (i = 0; i < DILITHIUM_L; ++i)
-    {
-        if (PQCLEAN_DILITHIUM2_CLEAN_poly_chknorm(&v->vec[i], bound))
+    {                                           // z= c*s1+y, GAMMA1 - BETA
+        if (PQCLEAN_DILITHIUM2_CLEAN_poly_chknorm(&v->vec[i], bound))   // PQCLEAN_DILITHIUM2_CLEAN_poly_chknorm 함수가 true라면 1을 반환하여 rej로 돌아가도록 함
         {
             return 1;
         }
@@ -2077,7 +2082,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyveck_decompose(polyveck *v1, polyveck *v0, con
 
     for (i = 0; i < DILITHIUM_K; ++i)
     {
-        PQCLEAN_DILITHIUM2_CLEAN_poly_decompose(&v1->vec[i], &v0->vec[i], &v->vec[i]);
+        PQCLEAN_DILITHIUM2_CLEAN_poly_decompose(&v1->vec[i], &v0->vec[i], &v->vec[i]);  // w1, w0, w
     }
 }
 
@@ -2443,26 +2448,26 @@ rej:
     shake256_inc_finalize(&state);                                              
     shake256_inc_squeeze(sig, SEEDBYTES, &state);                               // sig = H(mu | w1)
     shake256_inc_ctx_release(&state);
-    PQCLEAN_DILITHIUM2_CLEAN_poly_challenge(&cp, sig);                          
-    PQCLEAN_DILITHIUM2_CLEAN_poly_ntt(&cp);
+    PQCLEAN_DILITHIUM2_CLEAN_poly_challenge(&cp, sig);                          // -1 or +1 인 계수가 TAU개인 challenge 다항식 c생성                       
+    PQCLEAN_DILITHIUM2_CLEAN_poly_ntt(&cp);                                     // c NTT 변환
 
     /* Compute z, reject if it reveals secret */
-    PQCLEAN_DILITHIUM2_CLEAN_polyvecl_pointwise_poly_montgomery(&z, &cp, &s1);
-    PQCLEAN_DILITHIUM2_CLEAN_polyvecl_invntt_tomont(&z);
-    PQCLEAN_DILITHIUM2_CLEAN_polyvecl_add(&z, &z, &y);
-    PQCLEAN_DILITHIUM2_CLEAN_polyvecl_reduce(&z);
-    if (PQCLEAN_DILITHIUM2_CLEAN_polyvecl_chknorm(&z, GAMMA1 - BETA))
+    PQCLEAN_DILITHIUM2_CLEAN_polyvecl_pointwise_poly_montgomery(&z, &cp, &s1);  // z = c * s1
+    PQCLEAN_DILITHIUM2_CLEAN_polyvecl_invntt_tomont(&z);                        // z InvNTT 변환
+    PQCLEAN_DILITHIUM2_CLEAN_polyvecl_add(&z, &z, &y);                          // z = z + y (z = c*s1 + y)
+    PQCLEAN_DILITHIUM2_CLEAN_polyvecl_reduce(&z);                               // z 감산
+    if (PQCLEAN_DILITHIUM2_CLEAN_polyvecl_chknorm(&z, GAMMA1 - BETA))           // 만약, z의 계수의 절대값이 gamma1 - eta * tau 보다 크다면(함수의 결과값이 true라면 rej, false라면 다음 단계 진행)
     {
         goto rej;
     }
 
     /* Check that subtracting cs2 does not change high bits of w and low bits
      * do not reveal secret information */
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_pointwise_poly_montgomery(&h, &cp, &s2);
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_invntt_tomont(&h);
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_sub(&w0, &w0, &h);
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_reduce(&w0);
-    if (PQCLEAN_DILITHIUM2_CLEAN_polyveck_chknorm(&w0, GAMMA2 - BETA))
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_pointwise_poly_montgomery(&h, &cp, &s2);  // h = c * s2
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_invntt_tomont(&h);                        // c * s2 InvNTT
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_sub(&w0, &w0, &h);                        // w0 = w0 - c * s2
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_reduce(&w0);                              // w0 감산
+    if (PQCLEAN_DILITHIUM2_CLEAN_polyveck_chknorm(&w0, GAMMA2 - BETA))          // 만약 w0 - c * s2 의 계수의 절대값이 
     {
         goto rej;
     }
