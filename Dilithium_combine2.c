@@ -1150,14 +1150,14 @@ int32_t PQCLEAN_DILITHIUM2_CLEAN_decompose(int32_t *a0, int32_t a)  // w0, w
     a1 ^= ((43 - a1) >> 31) & a1;               // a1 = a1 ^ ((43 - a1) >> 31) & a1             이 때 a1의 값이 44일 경우 0으로 변경 해 주는것으로 high bit의 carry가 진행되지 않도록 해 준다.
 
     *a0 = a - a1 * 2 * GAMMA2;                  // a0 = w - a1 * 2 * GAMMA2                     여기에서 w0를 구하기 위해서 w - w1 * 2 * GAMMA2를 진행해주고
-    //*a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q;     // a0 = a0 - (((Q - 1) / 2 - a0) >> 31) & Q     
-    return a1;                                  // 
+    *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q;     // a0 = a0 - (((Q - 1) / 2 - a0) >> 31) & Q     이 코드가 필요한 이유를 모르겠음?
+    return a1;
 }
 
 unsigned int PQCLEAN_DILITHIUM2_CLEAN_make_hint(int32_t a0, int32_t a1)
 {
-    if (a0 > GAMMA2 || a0 < -GAMMA2 || (a0 == -GAMMA2 && a1 != 0))
-    {
+    if (a0 > GAMMA2 || a0 < -GAMMA2 || (a0 == -GAMMA2 && a1 != 0))  // by Lemma 2, ||ct0|| < BETA, ||LowBits(w-cs2)|| < GAMMA2 - BETA라면
+    {                                                               //              HighBits(w-cs2+ct0) = HighBits(w-cs2)가 되기 때문에 이를 만족시키는 w - cs2 + ct0의 범위를 설정
         return 1;
     }
 
@@ -1262,17 +1262,18 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyt1_pack(uint8_t *r, const poly *a)
     DBENCH_STOP(*tpack);
 }
 
+
 void PQCLEAN_DILITHIUM2_CLEAN_polyt1_unpack(poly *r, const uint8_t *a)
 {
     unsigned int i;
     DBENCH_START();
 
-    for (i = 0; i < DILITHIUM_N / 4; ++i)
+    for (i = 0; i < DILITHIUM_N / 4; ++i)                                                       // 8bit 5개를 10bit 4개로 decode 해주는 코드임
     {
-        r->coeffs[4 * i + 0] = ((a[5 * i + 0] >> 0) | ((uint32_t)a[5 * i + 1] << 8)) & 0x3FF;
-        r->coeffs[4 * i + 1] = ((a[5 * i + 1] >> 2) | ((uint32_t)a[5 * i + 2] << 6)) & 0x3FF;
-        r->coeffs[4 * i + 2] = ((a[5 * i + 2] >> 4) | ((uint32_t)a[5 * i + 3] << 4)) & 0x3FF;
-        r->coeffs[4 * i + 3] = ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF;
+        r->coeffs[4 * i + 0] = ((a[5 * i + 0] >> 0) | ((uint32_t)a[5 * i + 1] << 8)) & 0x3FF;   // a[1]의 하위 2bit | a[0]의 8bit
+        r->coeffs[4 * i + 1] = ((a[5 * i + 1] >> 2) | ((uint32_t)a[5 * i + 2] << 6)) & 0x3FF;   // a[2]의 하위 4bit | a[1]의 상위 6bit
+        r->coeffs[4 * i + 2] = ((a[5 * i + 2] >> 4) | ((uint32_t)a[5 * i + 3] << 4)) & 0x3FF;   // a[3]의 하위 6bit | a[2]의 상위 4bit
+        r->coeffs[4 * i + 3] = ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF;   // a[4]의      8bit | a[3]의 상위 2bit
     }
 
     DBENCH_STOP(*tpack);
@@ -1390,7 +1391,8 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyt0_unpack(poly *r, const uint8_t *a)
     DBENCH_STOP(*tpack);
 }
 
-void PQCLEAN_DILITHIUM2_CLEAN_polyz_pack(uint8_t *r, const poly *a)
+// 18bit 4개 -> 8bit 9개
+void PQCLEAN_DILITHIUM2_CLEAN_polyz_pack(uint8_t *r, const poly *a) // y vector에 대한 unpack 역시 해당 함수를 이용해서 진행하기 때문에 좀 더 큰 범위인 [-GAMMA1 + 1, GAMMA1] 로 encoding, decoding을 진행한다.
 {
     unsigned int i;
     uint32_t t[4];
@@ -1398,7 +1400,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyz_pack(uint8_t *r, const poly *a)
 
     for (i = 0; i < DILITHIUM_N / 4; ++i)
     {
-        t[0] = GAMMA1 - a->coeffs[4 * i + 0];
+        t[0] = GAMMA1 - a->coeffs[4 * i + 0];   // (-GAMMA1 + BETA, GAMMA1 - BETA] -> [0, 2GAMMA1 - 1]로 범위를 변경 (이유는 위에 서술되어 있음)
         t[1] = GAMMA1 - a->coeffs[4 * i + 1];
         t[2] = GAMMA1 - a->coeffs[4 * i + 2];
         t[3] = GAMMA1 - a->coeffs[4 * i + 3];
@@ -1448,7 +1450,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_polyz_unpack(poly *r, const uint8_t *a)
         r->coeffs[4 * i + 3] |= (uint32_t)a[9 * i + 8] << 10;   // a[6] | a[7] | a[6] 상위 2bit
         r->coeffs[4 * i + 3] &= 0x3FFFF;                        // 11111111 11111111 11     (18bit masking)
 
-        r->coeffs[4 * i + 0] = GAMMA1 - r->coeffs[4 * i + 0];   // 위의 과정을 모두 마친 다음 범위를 ( -gamma1 + 1, gamma1 ] -> [0, 2gamma1 - 1] 로 변경해주기 위해 GAMMA1 - coef를 진행
+        r->coeffs[4 * i + 0] = GAMMA1 - r->coeffs[4 * i + 0];   // 위의 과정을 모두 마친 다음 범위를 [ -gamma1 + 1, gamma1 ] -> [0, 2gamma1 - 1] 로 변경해주기 위해 GAMMA1 - coef를 진행
         r->coeffs[4 * i + 1] = GAMMA1 - r->coeffs[4 * i + 1];
         r->coeffs[4 * i + 2] = GAMMA1 - r->coeffs[4 * i + 2];
         r->coeffs[4 * i + 3] = GAMMA1 - r->coeffs[4 * i + 3];
@@ -1649,6 +1651,7 @@ void PQCLEAN_DILITHIUM2_CLEAN_poly_decompose(poly *a1, poly *a0, const poly *a) 
     DBENCH_STOP(*tround);
 }
 
+// // h : c * t0,   a0 : w0 - c * s2 + c * t0,    a1 : w1
 unsigned int PQCLEAN_DILITHIUM2_CLEAN_poly_make_hint(poly *h, const poly *a0, const poly *a1)
 {
     unsigned int i, s = 0;
@@ -1656,12 +1659,12 @@ unsigned int PQCLEAN_DILITHIUM2_CLEAN_poly_make_hint(poly *h, const poly *a0, co
 
     for (i = 0; i < DILITHIUM_N; ++i)
     {
-        h->coeffs[i] = PQCLEAN_DILITHIUM2_CLEAN_make_hint(a0->coeffs[i], a1->coeffs[i]);
-        s += h->coeffs[i];
+        h->coeffs[i] = PQCLEAN_DILITHIUM2_CLEAN_make_hint(a0->coeffs[i], a1->coeffs[i]);    // w0 - c * s2 + c * t0, w1을 input으로 hint vector의 계수(0 or 1)를 구해줌
+        s += h->coeffs[i];                                                                  // hint vector의 갯수 확인하기
     }
 
     DBENCH_STOP(*tround);
-    return s;
+    return s;   // hint vector의 계수 1의 갯수
 }
 
 void PQCLEAN_DILITHIUM2_CLEAN_poly_use_hint(poly *b, const poly *a, const poly *h)
@@ -2092,7 +2095,7 @@ unsigned int PQCLEAN_DILITHIUM2_CLEAN_polyveck_make_hint(polyveck *h, const poly
 
     for (i = 0; i < DILITHIUM_K; ++i)
     {
-        s += PQCLEAN_DILITHIUM2_CLEAN_poly_make_hint(&h->vec[i], &v0->vec[i], &v1->vec[i]);
+        s += PQCLEAN_DILITHIUM2_CLEAN_poly_make_hint(&h->vec[i], &v0->vec[i], &v1->vec[i]); // h : c * t0, v0 : w0 - c * s2 + c * t0, v1 : w1
     }
 
     return s;
@@ -2163,13 +2166,13 @@ void PQCLEAN_DILITHIUM2_CLEAN_unpack_pk(uint8_t rho[SEEDBYTES], polyveck *t1, co
 
     for (i = 0; i < SEEDBYTES; ++i)
     {
-        rho[i] = pk[i];
+        rho[i] = pk[i];                 // rho(A 행렬의 seed) 값 챙겨오기
     }
     pk += SEEDBYTES;
 
     for (i = 0; i < DILITHIUM_K; ++i)
     {
-        PQCLEAN_DILITHIUM2_CLEAN_polyt1_unpack(&t1->vec[i], pk + i * POLYT1_PACKEDBYTES);
+        PQCLEAN_DILITHIUM2_CLEAN_polyt1_unpack(&t1->vec[i], pk + i * POLYT1_PACKEDBYTES); // t1 vector unpack
     }
 }
 
@@ -2261,13 +2264,13 @@ void PQCLEAN_DILITHIUM2_CLEAN_pack_sig(uint8_t sig[PQCLEAN_DILITHIUM2_CLEAN_CRYP
 
     for (i = 0; i < SEEDBYTES; ++i)
     {
-        sig[i] = c[i];
+        sig[i] = c[i];                                                                  // challenge 다항식 seed 생성
     }
     sig += SEEDBYTES;
 
     for (i = 0; i < DILITHIUM_L; ++i)
     {
-        PQCLEAN_DILITHIUM2_CLEAN_polyz_pack(sig + i * POLYZ_PACKEDBYTES, &z->vec[i]);
+        PQCLEAN_DILITHIUM2_CLEAN_polyz_pack(sig + i * POLYZ_PACKEDBYTES, &z->vec[i]);   // z vector pack
     }
     sig += DILITHIUM_L * POLYZ_PACKEDBYTES;
 
@@ -2296,17 +2299,19 @@ int PQCLEAN_DILITHIUM2_CLEAN_unpack_sig(uint8_t c[SEEDBYTES], polyvecl *z, polyv
 {
     unsigned int i, j, k;
 
+    // signature:  challenge 벡터를 생성하는 seed + z의 다항식 벡터 + h의 다항식 벡터
+    
     for (i = 0; i < SEEDBYTES; ++i)
     {
-        c[i] = sig[i];
+        c[i] = sig[i];                                                                  // challenge vector seed 가져와주고
     }
-    sig += SEEDBYTES;
+    sig += SEEDBYTES;                                                                   // seed의 크기만큼 다음으로 넘김
 
     for (i = 0; i < DILITHIUM_L; ++i)
     {
-        PQCLEAN_DILITHIUM2_CLEAN_polyz_unpack(&z->vec[i], sig + i * POLYZ_PACKEDBYTES);
+        PQCLEAN_DILITHIUM2_CLEAN_polyz_unpack(&z->vec[i], sig + i * POLYZ_PACKEDBYTES); // z vector unpack해서 가져와 주고
     }
-    sig += DILITHIUM_L * POLYZ_PACKEDBYTES;
+    sig += DILITHIUM_L * POLYZ_PACKEDBYTES;                                             // z의 크기만큼 다음으로 넘김
 
     /* Decode h */
     k = 0;
@@ -2314,37 +2319,38 @@ int PQCLEAN_DILITHIUM2_CLEAN_unpack_sig(uint8_t c[SEEDBYTES], polyvecl *z, polyv
     {
         for (j = 0; j < DILITHIUM_N; ++j)
         {
-            h->vec[i].coeffs[j] = 0;
+            h->vec[i].coeffs[j] = 0;                        // 저장할 h의 coef를 0으로 초기화 해주고
         }
 
-        if (sig[OMEGA + i] < k || sig[OMEGA + i] > OMEGA)
+        if (sig[OMEGA + i] < k || sig[OMEGA + i] > OMEGA)   // 만약 hint vector h에서 힌트의 개수가 OMEGA 보다 많거나, 그 개수가 0보다 적다면 잘못된 것이기 때문에 검증 실패
         {
             return 1;
         }
 
-        for (j = k; j < sig[OMEGA + i]; ++j)
-        {
+        // 현재 다항식에서의 hint의 시작 위치 : k, hint의 위치 : j, 현재 다항식에서의 hint의 최대 개수 : sig[OMEGA + i]
+        for (j = k; j < sig[OMEGA + i]; ++j)                // 위를 통과했다면, 이는 해당 위치의 다항식에서 hint의 개수와 위치를 알 수 있기 때문에 
+        {                                                   // hint vector를 decode진행
             /* Coefficients are ordered for strong unforgeability */
-            if (j > k && sig[j] <= sig[j - 1])
-            {
-                return 1;
+            if (j > k && sig[j] <= sig[j - 1])              // hint vector는 hint가 발생하는 위치를 기준으로 순차적으로 저장하는 식으로 encode를 진행했기 때문에           // j > k는 이전 다항식인지 현재 다항식인지 확인하기 위함
+            {                                               // 하나의 다항식에 대해서 처리 할 때 다른 다항식을 제외하고 이전 위치가 다음 위치보다 크다면 오류가 발생한 것임
+                return 1;                                   
             }
-            h->vec[i].coeffs[sig[j]] = 1;
+            h->vec[i].coeffs[sig[j]] = 1;                   // hint vector를 decode 하여 저장
         }
 
-        k = sig[OMEGA + i];
+        k = sig[OMEGA + i];                                 // 다음 다항식에서의 encode된 hint의 시작 위치를 저장
     }
 
     /* Extra indices are zero for strong unforgeability */
-    for (j = k; j < OMEGA; ++j)
-    {
-        if (sig[j])
+    for (j = k; j < OMEGA; ++j)                             // hint vector는 encode 되어 있을 때 각 다항식에서의 hint의 발생 위치와 개수를 저장하기 때문에
+    {                                                       // 발생 위치에 대한 정보가 OMEGA, 즉 최대 개수일 경우가 아니라면 hint vector의 위치와 개수가 저장되어 있는 hint encode 사이의 값이 모두 0이어야 한다.
+        if (sig[j])                                         // 0이 아니라면 오류가 발생한 것이기 때문에 verify 실패
         {
             return 1;
         }
     }
 
-    return 0;
+    return 0;       // return 0를 해야 정상적으로 동작한 것임.
 }
 
 int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
@@ -2461,35 +2467,35 @@ rej:
         goto rej;
     }
 
-    /* Check that subtracting cs2 does not change high bits of w and low bits
-     * do not reveal secret information */
+    /* Check that subtracting cs2 does not change high bits of w and low bits   // w0에 대해서 c * s2가 High bits, Low bits에 영향을 미치지 않는다?
+     * do not reveal secret information */                                      // By Lemma 2, 3
     PQCLEAN_DILITHIUM2_CLEAN_polyveck_pointwise_poly_montgomery(&h, &cp, &s2);  // h = c * s2
     PQCLEAN_DILITHIUM2_CLEAN_polyveck_invntt_tomont(&h);                        // c * s2 InvNTT
     PQCLEAN_DILITHIUM2_CLEAN_polyveck_sub(&w0, &w0, &h);                        // w0 = w0 - c * s2
     PQCLEAN_DILITHIUM2_CLEAN_polyveck_reduce(&w0);                              // w0 감산
-    if (PQCLEAN_DILITHIUM2_CLEAN_polyveck_chknorm(&w0, GAMMA2 - BETA))          // 만약 w0 - c * s2 의 계수의 절대값이 
+    if (PQCLEAN_DILITHIUM2_CLEAN_polyveck_chknorm(&w0, GAMMA2 - BETA))          // 만약 w0 - c * s2 의 계수의 절대값이 GAMMA2 - BETA 보다 크다면 reject
     {
         goto rej;
     }
 
     /* Compute hints for w1 */
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_pointwise_poly_montgomery(&h, &cp, &t0);
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_invntt_tomont(&h);
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_reduce(&h);
-    if (PQCLEAN_DILITHIUM2_CLEAN_polyveck_chknorm(&h, GAMMA2))
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_pointwise_poly_montgomery(&h, &cp, &t0);  // h = c * t0
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_invntt_tomont(&h);                        // c * t0 InvNTT
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_reduce(&h);                               // c * t0 감산
+    if (PQCLEAN_DILITHIUM2_CLEAN_polyveck_chknorm(&h, GAMMA2))                  // c * t0가 GAMMA2 보다 크다면 reject
     {
         goto rej;
     }
 
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_add(&w0, &w0, &h);
-    n = PQCLEAN_DILITHIUM2_CLEAN_polyveck_make_hint(&h, &w0, &w1);
-    if (n > OMEGA)
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_add(&w0, &w0, &h);                        // w0 - c * s2 + c * t0
+    n = PQCLEAN_DILITHIUM2_CLEAN_polyveck_make_hint(&h, &w0, &w1);              // h = MakeHint(-c * t0, w - c * s2 + c * t0, 2 * GAMMA2)로 hint 벡터 생성
+    if (n > OMEGA)                                                              // 총 힌트의 개수가 OMEGA보다 크면 reject
     {
         goto rej;
     }
 
     /* Write signature */
-    PQCLEAN_DILITHIUM2_CLEAN_pack_sig(sig, sig, &z, &h);
+    PQCLEAN_DILITHIUM2_CLEAN_pack_sig(sig, sig, &z, &h);                        // challenge 다항식 생성 seed | z | h 를 pack
     *siglen = PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES;
     return 0;
 }
@@ -2502,13 +2508,13 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign(uint8_t *sm, size_t *smlen, const uint8
     {
         sm[PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES + mlen - 1 - i] = m[mlen - 1 - i]; // m에 있는 message를 뒤에서 부터 저장
     }                                                                               // 결국에는 sm의 마지막 MLEN bytes를 M으로 채우는 작업임
-    PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_signature(sm, smlen, sm + PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES, mlen, sk);
-    *smlen += mlen;
+    PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_signature(sm, smlen, sm + PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES, mlen, sk);    // signature를 생성, smlen에 sign의 encode값을 저장
+    *smlen += mlen;                                                                                                     // 그 이후 message len을 저장하는 것으로 smlen = sign encode | message len 으로 한다.
     return 0;
 }
 
 int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m, size_t mlen, const uint8_t *pk)
-{
+{                                               //          sign, sign의 크기, 실제 메시지, 메시지 길이, public key
     unsigned int i;
     uint8_t buf[DILITHIUM_K * POLYW1_PACKEDBYTES];
     uint8_t rho[SEEDBYTES];
@@ -2520,17 +2526,17 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t sigle
     polyveck t1, w1, h;
     shake256incctx state;
 
-    if (siglen != PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES)
+    if (siglen != PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES)            // sign의 길이가 다르다면 reject
     {
         return -1;
     }
 
-    PQCLEAN_DILITHIUM2_CLEAN_unpack_pk(rho, &t1, pk);
-    if (PQCLEAN_DILITHIUM2_CLEAN_unpack_sig(c, &z, &h, sig))
+    PQCLEAN_DILITHIUM2_CLEAN_unpack_pk(rho, &t1, pk);               // pk를 unpack
+    if (PQCLEAN_DILITHIUM2_CLEAN_unpack_sig(c, &z, &h, sig))        // signature unpack 
     {
         return -1;
     }
-    if (PQCLEAN_DILITHIUM2_CLEAN_polyvecl_chknorm(&z, GAMMA1 - BETA))
+    if (PQCLEAN_DILITHIUM2_CLEAN_polyvecl_chknorm(&z, GAMMA1 - BETA)) // 만약, z의 계수의 절대값이 gamma1 - eta * tau 보다 크다면(함수의 결과값이 true라면 rej, false라면 다음 단계 진행)
     {
         return -1;
     }
@@ -2592,7 +2598,8 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_open(uint8_t *m, size_t *mlen, const ui
         goto badsig;
     }
 
-    *mlen = smlen - PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES;
+    *mlen = smlen - PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES;  // message len을 계산해주고
+                                            //      sign, sign의 크기, 실제 메시지, 메시지 길이, public key
     if (PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(sm, PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES, sm + PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES, *mlen, pk))
     {
         goto badsig;
@@ -2653,8 +2660,8 @@ int main()
     randombytes_win32_randombytes(m, MLEN); // sign 과정에서 사용할 message(M) 생성, 이후 sign에서 tr과 연접하여 SHAKE256을 통해 512bit(64byte)로 변경
 
     PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair(pk, sk);                       // key 생성
-    PQCLEAN_DILITHIUM2_CLEAN_crypto_sign(sm, &smlen, m, MLEN, sk);              // sign 생성
-    ret = PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_open(m2, &mlen, sm, smlen, pk);
+    PQCLEAN_DILITHIUM2_CLEAN_crypto_sign(sm, &smlen, m, MLEN, sk);              // sign 생성        sm = 
+    ret = PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_open(m2, &mlen, sm, smlen, pk);  // veriry 진행
 
     if (ret)
     {

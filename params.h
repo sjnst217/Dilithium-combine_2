@@ -74,7 +74,7 @@ z
 
 
 
-#define PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES (SEEDBYTES + DILITHIUM_L*POLYZ_PACKEDBYTES + POLYVECH_PACKEDBYTES)  // packing 했을 때의 signature의 크기:  random 값 생성하는 seed + z의 다항식 벡터 + h의 다항식 벡터
+#define PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_BYTES (SEEDBYTES + DILITHIUM_L*POLYZ_PACKEDBYTES + POLYVECH_PACKEDBYTES)  // packing 했을 때의 signature의 크기:  challenge 벡터를 생성하는 seed + z의 다항식 벡터 + h의 다항식 벡터
 
 typedef struct {
         int32_t coeffs[DILITHIUM_N];
