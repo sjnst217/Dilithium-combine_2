@@ -17,6 +17,7 @@
 #define GAMMA1 (1 << 17)        // y 행렬의 계수의 범위
 #define GAMMA2 ((Q-1)/88)       // t를 제외한 high bit를 구하기 위한 범위 (보통 2*gamma를 이용)        
 #define OMEGA 80                // hint vector h에서의 최대 1의 개수 -> 하나의 다항식에서의 최대 1의 개수가 아니라는 점을 조심
+                                // 이 omega의 제약은 BitPack, BitUnpack에서 더 효율적으로 인코딩 및 디코딩을 할 수 있도록 함
 
 #define MONT (-4186625) // 2^32 % Q
 #define QINV 58728449 // q^(-1) mod 2^32

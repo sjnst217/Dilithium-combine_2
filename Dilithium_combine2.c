@@ -2395,7 +2395,7 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk)
     /* Extract t1 and write public key */
     PQCLEAN_DILITHIUM2_CLEAN_polyveck_caddq(&t1);                 // t 의 범위를 0 ~ q-1 로 변경
     PQCLEAN_DILITHIUM2_CLEAN_polyveck_power2round(&t1, &t0, &t1); // t = t1 * 2^d + t0 f로 t1, t0 의 값을 구해주고
-    PQCLEAN_DILITHIUM2_CLEAN_pack_pk(pk, rho, &t1);               // pk = 공개행렬 A의 seed(rho) || pack(t1) 으로 pk를 생성
+    PQCLEAN_DILITHIUM2_CLEAN_pack_pk(pk, rho, &t1);               // pk = 공개행렬 A의 seed(rho) || pack(t1) 으로 pk를 생성eit
 
     /* Compute H(rho, t1) and write secret key */
     shake256(tr, SEEDBYTES, pk, PQCLEAN_DILITHIUM2_CLEAN_CRYPTO_PUBLICKEYBYTES); // tr = H(rho, t1)
@@ -2575,17 +2575,17 @@ int PQCLEAN_DILITHIUM2_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t sigle
 
     /* Reconstruct w1 */
     PQCLEAN_DILITHIUM2_CLEAN_polyveck_caddq(&w1);                                   // A*z - t1*2^D*c 의 범위 양수로 변환
-    PQCLEAN_DILITHIUM2_CLEAN_polyveck_use_hint(&w1, &w1, &h);                       // UseHint 함수를 통해 Az - c*t1*2^D() 를 복구
+    PQCLEAN_DILITHIUM2_CLEAN_polyveck_use_hint(&w1, &w1, &h);                       // UseHint 함수를 통해 Highbits(Az - c*t1*2^D, 2GAMMA2) 를 복구 (이 값이 바로 signer가 미리 계산한 w1-cs2+ct0 이다.)
     PQCLEAN_DILITHIUM2_CLEAN_polyveck_pack_w1(buf, &w1);                            // 해당 값 pack
 
     /* Call random oracle and verify PQCLEAN_DILITHIUM2_CLEAN_challenge */
     shake256_inc_init(&state);
-    shake256_inc_absorb(&state, mu, CRHBYTES);
+    shake256_inc_absorb(&state, mu, CRHBYTES);                                      // 계산했던 mu값 (mu = H(tr | M))과 계산한 w1prime 값을 넣어서 challenge 다항식 seed를 만들어줌
     shake256_inc_absorb(&state, buf, DILITHIUM_K * POLYW1_PACKEDBYTES);
     shake256_inc_finalize(&state);
-    shake256_inc_squeeze(c2, SEEDBYTES, &state);
+    shake256_inc_squeeze(c2, SEEDBYTES, &state);                                    // c2 = H(mu | w1prime)
     shake256_inc_ctx_release(&state);
-    for (i = 0; i < SEEDBYTES; ++i)
+    for (i = 0; i < SEEDBYTES; ++i)                                                 // signer가 준 challenge 다항식의 seed값과 직접 계산한 seed값이 다르면 검증 실패, 같다면 검증 성공
     {
         if (c[i] != c2[i])
         {
